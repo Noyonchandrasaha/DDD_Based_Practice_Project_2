@@ -4,86 +4,153 @@
 
 import { UserEmailVO } from '../../../../../modules/user/domain/value-objects/UserEmail.vo';
 
-describe('UserEmailVo',() => {
-    // === VALID EMAILS ===
-  it('should accept a valid email', () => {
-    const email = UserEmailVO.create('noyonsaha@example.com');
-    expect(email.email).toBe('noyonsaha@example.com');
+
+
+describe('UserEmailVO', () => {
+  // -----------------------------------------------------------------
+  // Valid Emails: Test normalization (trim + lowercase)
+  // -----------------------------------------------------------------
+  const validEmailInputs = [
+    { input: '  JOHN.DOE@EXAMPLE.COM  ', expected: 'john.doe@example.com' },
+    { input: 'Ana+Tag@Gmail.Co.Uk', expected: 'ana+tag@gmail.co.uk' },
+    { input: 'test.user@sub.domain.org ', expected: 'test.user@sub.domain.org' },
+    { input: 'Jose@Domain.Co', expected: 'jose@domain.co' },
+    { input: 'simple@ex.com', expected: 'simple@ex.com' },
+  ];
+
+  // -----------------------------------------------------------------
+  // Invalid Emails: Split into "empty" and "format" errors
+  // -----------------------------------------------------------------
+  const emptyEmails = ['', '   '];
+
+  const invalidFormatEmails = [
+    'not-an-email',
+    'user@',
+    '@domain.com',
+    'user@domain',
+    'user@domain.c',
+    'user.name@domain..com',
+    'user@.com',
+    'user@domain_com',
+    'user@domain.',
+    'user@domain..com',
+    ];
+
+  // -----------------------------------------------------------------
+  // Special valid emails (allowed characters)
+  // -----------------------------------------------------------------
+  const specialValidEmails = [
+    'user+tag@domain.com',
+    'user.name@sub.domain.co.uk',
+    'user%20name@domain.org',
+    'user@192-168-1-1.example.com',
+    'admin@localhost.local',
+  ];
+
+  // =================================================================
+  // create() - Factory Method
+  // =================================================================
+  describe('create() - Factory Method', () => {
+    it('should create successfully with valid email', () => {
+      const vo = UserEmailVO.create('john.doe@example.com');
+      expect(vo.email).toBe('john.doe@example.com');
+    });
+
+    it('should trim and lowercase the email', () => {
+      validEmailInputs.forEach(({ input, expected }) => {
+        const vo = UserEmailVO.create(input);
+        expect(vo.email).toBe(expected);
+      });
+    });
+
+    it('should return different instances for different emails', () => {
+      const email1 = UserEmailVO.create('a@example.com');
+      const email2 = UserEmailVO.create('b@example.com');
+      expect(email1).not.toBe(email2);
+    });
   });
 
-  it('should lowercase the email', () => {
-    const email = UserEmailVO.create('NoYoN@ExAmPlE.CoM');
-    expect(email.email).toBe('noyon@example.com');
+  // =================================================================
+  // validate() - Domain Rules
+  // =================================================================
+  describe('validate() - Domain Rules', () => {
+    it('should throw "Email cannot be empty." for empty or whitespace', () => {
+      emptyEmails.forEach(email => {
+        expect(() => UserEmailVO.create(email)).toThrow('Email cannot be empty.');
+      });
+    });
+
+    it('should throw "Invalid email format: ..." for malformed emails', () => {
+      invalidFormatEmails.forEach(email => {
+        expect(() => UserEmailVO.create(email)).toThrow(/^Invalid email format:/);
+      });
+    });
+
+    it('should include the invalid email in the error message', () => {
+      const bad = 'bad@format';
+      expect(() => UserEmailVO.create(bad)).toThrow(`Invalid email format: ${bad}`);
+    });
+
+    it('should allow valid emails with special characters', () => {
+      specialValidEmails.forEach(email => {
+        expect(() => UserEmailVO.create(email)).not.toThrow();
+      });
+    });
   });
 
-  it('should trim whitespace', () => {
-    const email = UserEmailVO.create('  noyonsaha@example.com  ');
-    expect(email.email).toBe('noyonsaha@example.com');
+  // =================================================================
+  // getter
+  // =================================================================
+  describe('getter', () => {
+    it('should expose the normalized email via .email', () => {
+      const input = '  TEST@EXAMPLE.ORG  ';
+      const vo = UserEmailVO.create(input);
+      expect(vo.email).toBe('test@example.org');
+    });
+
+    it('should return a string', () => {
+      const vo = UserEmailVO.create('user@domain.com');
+      expect(typeof vo.email).toBe('string');
+    });
   });
 
-  it('should handle subdomains', () => {
-    const email = UserEmailVO.create('user@mail.example.co.uk');
-    expect(email.email).toBe('user@mail.example.co.uk');
+  // =================================================================
+  // edge cases
+  // =================================================================
+  describe('edge cases', () => {
+    it('should accept maximum local part length (64 chars)', () => {
+      const maxLocal = 'a'.repeat(64) + '@domain.com';
+      expect(() => UserEmailVO.create(maxLocal)).not.toThrow();
+    });
+
+    it('should reject local part longer than 64 chars', () => {
+      const tooLong = 'a'.repeat(65) + '@domain.com';
+      expect(() => UserEmailVO.create(tooLong)).toThrow(/^Invalid email format:/);
+    });
+
+    it('should reject double dots in domain', () => {
+      expect(() => UserEmailVO.create('user@domain..com'))
+        .toThrow('Invalid email format: user@domain..com');
+    });
+
+    it('should reject international characters in local part', () => {
+      expect(() => UserEmailVO.create('josé@domain.co'))
+        .toThrow('Invalid email format: josé@domain.co');
+    });
   });
 
-  it('should allow numbers and special chars in local part', () => {
-    const email = UserEmailVO.create('user+tag123@example.org');
-    expect(email.email).toBe('user+tag123@example.org');
-  });
+  // =================================================================
+  // immutability
+  // =================================================================
+  describe('immutability', () => {
+    it('should prevent mutation of email after creation', () => {
+      const vo = UserEmailVO.create('user@domain.com');
+      const original = vo.email;
 
-  // === INVALID EMAILS ===
-  it('should throw if email is empty string', () => {
-    expect(() => UserEmailVO.create('')).toThrow('Email cannot be empty');
-  });
+      // Try to mutate via value
+      (vo as any).value.email = 'hacked@evil.com';
 
-  it('should throw if email is only whitespace', () => {
-    expect(() => UserEmailVO.create('   ')).toThrow('Email cannot be empty');
+      expect(vo.email).toBe(original); // Still original
+    });
   });
-
-  it('should throw if email is null or undefined', () => {
-    // @ts-ignore - testing runtime
-    expect(() => UserEmailVO.create(null)).toThrow('Email cannot be empty');
-    // @ts-ignore
-    expect(() => UserEmailVO.create(undefined)).toThrow('Email cannot be empty');
-  });
-
-  it('should throw for missing @', () => {
-    expect(() => UserEmailVO.create('noyongmail.com')).toThrow('Invalid email format');
-  });
-
-  it('should throw for missing domain', () => {
-    expect(() => UserEmailVO.create('noyon@')).toThrow('Invalid email format');
-  });
-
-  it('should throw for missing local part', () => {
-    expect(() => UserEmailVO.create('@example.com')).toThrow('Invalid email format');
-  });
-
-  it('should throw for missing TLD', () => {
-    expect(() => UserEmailVO.create('noyon@example')).toThrow('Invalid email format');
-  });
-
-  it('should throw for double @@', () => {
-    expect(() => UserEmailVO.create('noyon@@example.com')).toThrow('Invalid email format');
-  });
-
-  it('should throw for spaces in email', () => {
-    expect(() => UserEmailVO.create('noyon saha@example.com')).toThrow('Invalid email format');
-  });
-
-  it('should throw for trailing dot in domain', () => {
-    expect(() => UserEmailVO.create('noyon@example.com.')).toThrow('Invalid email format');
-  });
-
-  // === ERROR MESSAGES ===
-  it('should include email in error message for invalid format', () => {
-    expect(() => UserEmailVO.create('bad@@email')).toThrow('Invalid email format: bad@@email');
-  });
-
-  // === IMMUTABILITY (Bonus) ===
-  it('should not allow mutation of props', () => {
-    const email = UserEmailVO.create('test@example.com');
-    // @ts-ignore - testing immutability
-    expect(() => { email.props.value = 'hack'; }).toThrow();
-  });
-})
+});

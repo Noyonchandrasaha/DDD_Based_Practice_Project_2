@@ -6,7 +6,7 @@ export const REGEX_PATTERNS = {
   //Name
   NAME: /^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/,
   // Email
-  EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+[^.\s]$/,
+  EMAIL: /^[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/,
 
   // Passwords (Minimum 8 characters, at least one uppercase, one lowercase, one number, one special character)
   PASSWORD_STRONG: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,

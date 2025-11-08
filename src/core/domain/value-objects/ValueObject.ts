@@ -5,7 +5,7 @@
 export abstract class  ValueObject<T> {
   protected readonly props: T;
   constructor(props: T) {
-    this.props = Object.freeze(props);
+    this.props = Object.freeze({...props});
   }
 
   equals(vo?: ValueObject<T>):boolean {
@@ -15,6 +15,6 @@ export abstract class  ValueObject<T> {
   }
 
   get value(): T {
-    return this.props
+    return {...this.props}
   }
 }
