@@ -30,7 +30,7 @@ export class UserNameVO extends ValueObject<UserNameProps> {
       throw new Error(`Middle name must contain only letters.`);
     }
     if(!nameRegex.test(props.lastName)){
-      throw new Error(`Last name only contain letters.`);
+      throw new Error(`Last name must contain only letters.`);
     }
   }
 
@@ -47,8 +47,13 @@ export class UserNameVO extends ValueObject<UserNameProps> {
   }
 
   public static create(lastName: string, firstName?: string, middleName?: string ): UserNameVO {
-    UserNameVO.validate({lastName, firstName, middleName});
-    return new UserNameVO({lastName, firstName, middleName})
+    const props ={
+      lastName: lastName.trim(),
+      firstName: firstName?.trim(),
+      middleName: middleName?.trim()
+    }
+    UserNameVO.validate(props);
+    return new UserNameVO(props)
   }
 
   public fullName(): string {
