@@ -1,0 +1,30 @@
+# -------------------------------
+# Production-grade PNPM configuration
+# -------------------------------
+
+# Only install production dependencies in production
+production=true
+
+# Use exact versions to ensure reproducible builds
+save-exact=true
+
+# Enforce strict checking of peer dependencies
+strict-peer-dependencies=true
+
+# Allow preinstall/postinstall scripts (needed for Prisma, esbuild, etc.)
+enable-pre-post-scripts=true
+
+# Automatically install missing peer dependencies
+auto-install-peers=true
+
+# Suppress deprecated package warnings
+deprecated=false
+
+# Use frozen lockfile to ensure exact versions
+prefer-frozen-lockfile=true
+
+# Custom PNPM store path (helpful for CI/CD caching)
+store-dir=.pnpm-store
+
+# Execute package scripts (postinstall, preinstall, etc.)
+ignore-scripts=false

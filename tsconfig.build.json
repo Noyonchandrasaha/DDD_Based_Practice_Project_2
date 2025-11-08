@@ -1,0 +1,28 @@
+// ============================================================================
+// FILE: tsconfig.build.json
+// Description: Optimized TypeScript build configuration for production
+// ============================================================================
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "sourceMap": false,
+    "declaration": true,
+    "removeComments": true,
+    "noEmitOnError": true,
+    "incremental": false
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "scripts",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    "**/*.mock.ts",
+    "jest.config.js"
+  ]
+}
