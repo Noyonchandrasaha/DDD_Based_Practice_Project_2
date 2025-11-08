@@ -24,25 +24,26 @@ export class PhoneNumberVO extends ValueObject<PhoneNumberProps> {
         }
 
         const trimmed = input.trim();
-        const phoneRegex = REGEX_PATTERNS.PHONE;
 
-        if (!phoneRegex.test(trimmed)) {
+        // Step 1: Count digits FIRST
+        const digits = trimmed.replace(/[^\d]/g, '');
+        if (digits.length < 7 || digits.length > 15) {
             throw new Error(`Invalid phone number format: ${trimmed}`);
         }
 
-        // Count only digits (allow leading +)
-        const digits = trimmed.replace(/[^\d]/g, '');
-        if (digits.length < 7 || digits.length > 15) {
-            throw new Error(`Phone number must have 7 to 15 digits: ${trimmed}`);
+        // Step 2: Then validate format via regex
+        const phoneRegex = REGEX_PATTERNS.PHONE;
+        if (!phoneRegex.test(trimmed)) {
+            throw new Error(`Invalid phone number format: ${trimmed}`);
         }
-    }
+        }
 
     public static create(phoneNumber: string): PhoneNumberVO {
         // Validate first
         PhoneNumberVO.validate(phoneNumber);
 
         // Normalize: remove spaces, dots, dashes
-        const normalized = phoneNumber.trim().replace(/[\s.-]/g, '');
+        const normalized = phoneNumber.trim().replace(/[\s.()-]/g, '');
 
         const props: PhoneNumberProps = { phoneNumber: normalized };
         return new PhoneNumberVO(props);

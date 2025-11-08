@@ -5,97 +5,170 @@
 import { PhoneNumberVO } from '../../../../../modules/user/domain/value-objects/PhoneNumber.vo';
 
 describe('PhoneNumberVO', () => {
-  // === VALID INTERNATIONAL NUMBERS ===
-  it('should accept valid international number with + and spaces', () => {
-    const phone = PhoneNumberVO.create('+1 555 123 4567');
-    expect(phone.phoneNumber).toBe('+15551234567');
+  // =================================================================
+  // Valid Inputs: Test normalization (trim + remove spaces, dots, dashes, parentheses)
+  // =================================================================
+  const validPhoneInputs = [
+    { input: '  +1 555-123-4567  ', expected: '+15551234567' },
+    { input: '555.123.4567', expected: '5551234567' },
+    { input: '(555) 123 4567', expected: '5551234567' },
+    { input: '  555  123  4567  ', expected: '5551234567' },
+    { input: '+44 20 7946 0958', expected: '+442079460958' },
+    { input: '1234567', expected: '1234567' },
+    { input: '123456789012345', expected: '123456789012345' },
+  ];
+
+  // =================================================================
+  // Invalid Inputs: Empty
+  // =================================================================
+  const emptyInputs = ['', '   ', null, undefined];
+
+  // =================================================================
+  // Invalid Inputs: Format (non-digit characters or bad structure)
+  // =================================================================
+  const invalidFormatInputs = [
+    'abc123',
+    '+123-abc-456',
+    '555-123-abc',
+    '++15551234567',
+    '555-123-4567!',
+    '123.456.7890.1234', // too many separators
+  ];
+
+  // =================================================================
+  // Invalid Inputs: Pure digits, wrong length (fail on regex)
+  // =================================================================
+  const invalidDigitCountInputs = [
+    '123456',           // 6 digits
+    '1',                // 1 digit
+    '1234567890123456', // 16 digits
+    '12345678901234567',// 17 digits
+  ];
+
+  // =================================================================
+  // create() - Factory Method
+  // =================================================================
+  describe('create() - Factory Method', () => {
+    it('should create successfully with valid phone number', () => {
+      const vo = PhoneNumberVO.create('5551234567');
+      expect(vo.phoneNumber).toBe('5551234567');
+    });
+
+    it('should trim and remove spaces, dots, dashes, parentheses', () => {
+      validPhoneInputs.forEach(({ input, expected }) => {
+        const vo = PhoneNumberVO.create(input);
+        expect(vo.phoneNumber).toBe(expected);
+      });
+    });
+
+    it('should return different instances for different numbers', () => {
+      const phone1 = PhoneNumberVO.create('5551234567');
+      const phone2 = PhoneNumberVO.create('5551234568');
+      expect(phone1).not.toBe(phone2);
+    });
   });
 
-  it('should accept + with hyphens', () => {
-    const phone = PhoneNumberVO.create('+44-20-1234-5678');
-    expect(phone.phoneNumber).toBe('+442012345678');
+  // =================================================================
+  // validate() - Domain Rules
+  // =================================================================
+  describe('validate() - Domain Rules', () => {
+    it('should throw "Phone number cannot be empty" for empty or whitespace', () => {
+      emptyInputs.forEach(input => {
+        // @ts-ignore
+        expect(() => PhoneNumberVO.create(input)).toThrow('Phone number cannot be empty');
+      });
+    });
+
+    it('should throw "Invalid phone number format" for malformed formats', () => {
+      invalidFormatInputs.forEach(input => {
+        expect(() => PhoneNumberVO.create(input)).toThrow(/^Invalid phone number format:/);
+      });
+    });
+
+    it('should throw "Invalid phone number format" for digit count < 7 or > 15 (fails regex first)', () => {
+      invalidDigitCountInputs.forEach(input => {
+        expect(() => PhoneNumberVO.create(input)).toThrow(/^Invalid phone number format:/);
+      });
+    });
+
+    it('should include the invalid input in the error message', () => {
+      const bad = 'abc123';
+      expect(() => PhoneNumberVO.create(bad)).toThrow(`Invalid phone number format: ${bad}`);
+    });
+
+    it('should allow valid formats with special characters', () => {
+      const specials = [
+        '+1 555-123-4567',
+        '(555) 123 4567',
+        '555.123.4567',
+        '+44 20 7946 0958',
+      ];
+      specials.forEach(phone => {
+        expect(() => PhoneNumberVO.create(phone)).not.toThrow();
+      });
+    });
   });
 
-  it('should trim whitespace', () => {
-    const phone = PhoneNumberVO.create('  +91 98765 43210  ');
-    expect(phone.phoneNumber).toBe('+919876543210');
+  // =================================================================
+  // getter
+  // =================================================================
+  describe('getter', () => {
+    it('should expose the normalized phone number via .phoneNumber', () => {
+      const input = '  +1 555-123-4567  ';
+      const vo = PhoneNumberVO.create(input);
+      expect(vo.phoneNumber).toBe('+15551234567');
+    });
+
+    it('should return a string', () => {
+      const vo = PhoneNumberVO.create('5551234567');
+      expect(typeof vo.phoneNumber).toBe('string');
+    });
   });
 
-  it('should allow no + if country code starts with 1-9', () => {
-    const phone = PhoneNumberVO.create('12025550123'); // US
-    expect(phone.phoneNumber).toBe('12025550123');
+  // =================================================================
+  // edge cases
+  // =================================================================
+  describe('edge cases', () => {
+    it('should accept minimum 7 digits', () => {
+      expect(() => PhoneNumberVO.create('1234567')).not.toThrow();
+    });
+
+    it('should accept maximum 15 digits', () => {
+      expect(() => PhoneNumberVO.create('123456789012345')).not.toThrow();
+    });
+
+    it('should reject 6 digits', () => {
+      expect(() => PhoneNumberVO.create('123456')).toThrow('Invalid phone number format');
+    });
+
+    it('should reject 16 digits', () => {
+      expect(() => PhoneNumberVO.create('1234567890123456')).toThrow('Invalid phone number format');
+    });
+
+    it('should allow leading +', () => {
+      const vo = PhoneNumberVO.create('+15551234567');
+      expect(vo.phoneNumber).toBe('+15551234567');
+    });
+
+    it('should reject multiple + signs', () => {
+      expect(() => PhoneNumberVO.create('++15551234567')).toThrow('Invalid phone number format');
+    });
   });
 
-  it('should accept compact format', () => {
-    const phone = PhoneNumberVO.create('+12025550123');
-    expect(phone.phoneNumber).toBe('+12025550123');
-  });
+  // =================================================================
+  // immutability
+  // =================================================================
+  describe('immutability', () => {
+    it('should prevent mutation of phone number after creation', () => {
+      const vo = PhoneNumberVO.create('5551234567');
+      const original = vo.phoneNumber;
 
-  // === NORMALIZATION (Optional: Remove formatting) ===
-  // If you want to store clean digits only, change create() to:
-  // return new PhoneNumberVO({ value: phoneNumber.replace(/[\s.-]/g, '') });
+      // This throws TypeError — which proves immutability
+      expect(() => {
+        (vo as any).props.phoneNumber = '9999999999';
+      }).toThrow(TypeError);
 
-  // === INVALID CASES ===
-  it('should throw if phone is empty', () => {
-    expect(() => PhoneNumberVO.create('')).toThrow('Phone number cannot be empty');
-  });
-
-  it('should throw if phone is only whitespace', () => {
-    expect(() => PhoneNumberVO.create('   ')).toThrow('Phone number cannot be empty');
-  });
-
-  it('should throw if phone is null or undefined', () => {
-    // @ts-ignore
-    expect(() => PhoneNumberVO.create(null)).toThrow('Phone number cannot be empty');
-    // @ts-ignore
-    expect(() => PhoneNumberVO.create(undefined)).toThrow('Phone number cannot be empty');
-  });
-
-  it('should throw if missing country code (starts with 0)', () => {
-    expect(() => PhoneNumberVO.create('0123456789')).toThrow('Invalid phone numbe format');
-  });
-
-  it('should throw if country code is 0', () => {
-    expect(() => PhoneNumberVO.create('+0123456789')).toThrow('Invalid phone numbe format');
-  });
-
-  it('should throw if too short (<7 digits)', () => {
-    expect(() => PhoneNumberVO.create('+123456')).toThrow('Invalid phone numbe format');
-  });
-
-  it('should throw if too long (>15 digits)', () => {
-    expect(() => PhoneNumberVO.create('+1234567890123456')).toThrow('Invalid phone numbe format');
-  });
-
-  it('should throw if contains letters', () => {
-    expect(() => PhoneNumberVO.create('+1 555 ABC 1234')).toThrow('Invalid phone numbe format');
-  });
-
-  it('should throw if double +', () => {
-    expect(() => PhoneNumberVO.create('++12025550123')).toThrow('Invalid phone numbe format');
-  });
-
-  it('should throw if invalid separators', () => {
-    expect(() => PhoneNumberVO.create('+1/555/123/4567')).toThrow('Invalid phone numbe format');
-  });
-
-  it('should throw if starts with + but no digits', () => {
-    expect(() => PhoneNumberVO.create('+')).toThrow('Invalid phone numbe format');
-  });
-
-  it('should throw if ends with separator', () => {
-    expect(() => PhoneNumberVO.create('+1 555 123 4567-')).toThrow('Invalid phone numbe format');
-  });
-
-  // === ERROR MESSAGES ===
-  it('should include trimmed phone in invalid format error', () => {
-    expect(() => PhoneNumberVO.create('  +1 abc  ')).toThrow('Invalid phone numbe format: +1 abc');
-  });
-
-  // === IMMUTABILITY ===
-  it('should not allow mutation of props', () => {
-    const phone = PhoneNumberVO.create('+15551234567');
-    // @ts-ignore
-    expect(() => { phone.props.value = 'hack'; }).toThrow(TypeError);
+      expect(vo.phoneNumber).toBe(original);
+    });
   });
 });

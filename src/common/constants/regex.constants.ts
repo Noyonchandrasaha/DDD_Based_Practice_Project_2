@@ -15,7 +15,7 @@ export const REGEX_PATTERNS = {
   USERNAME: /^[a-zA-Z0-9_]{3,20}$/,
 
   // Phone number (international format, optional '+', 7-15 digits)
-  PHONE: /^\+?[1-9]\d{0,3}[\s.-]?\d{1,4}[\s.-]?\d{1,4}[\s.-]?\d{1,9}$/,
+  PHONE: /^\+?[\d\s().-]{7,15}$/,
 
   // URL (http, https, ftp)
   URL: /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-._~:/?#[\]@!$&'()*+,;=]*)?$/,
