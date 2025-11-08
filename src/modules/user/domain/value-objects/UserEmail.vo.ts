@@ -20,12 +20,12 @@ export class UserEmailVO extends ValueObject<UserEmailProps> {
 
     private static validate(props: UserEmailProps): void {
         if (!props.email?.trim()) {
-        throw new Error('Email cannot be empty.');
+            throw new Error('Email cannot be empty.');
         }
 
         const emailRegex = REGEX_PATTERNS.EMAIL;
-        if (!emailRegex.test(props.email)) {
-        throw new Error(`Invalid email format: ${props.email}`);
+            if (!emailRegex.test(props.email)) {
+                throw new Error(`Invalid email format: ${props.email}`);
         }
     }
 
