@@ -65,14 +65,14 @@ describe('AddressVO', () => {
   });
 
   it('should throw if city is empty', () => {
-    expect(() => AddressVO.create('123 Main St', '', 'USA')).toThrow('City Cannot be empty');
+    expect(() => AddressVO.create('123 Main St', '', 'USA')).toThrow('City cannot be empty');
   });
 
   it('should throw if city is null or undefined', () => {
     // @ts-ignore
-    expect(() => AddressVO.create('123 Main St', null, 'USA')).toThrow('City Cannot be empty');
+    expect(() => AddressVO.create('123 Main St', null, 'USA')).toThrow('City cannot be empty');
     // @ts-ignore
-    expect(() => AddressVO.create('123 Main St', undefined, 'USA')).toThrow('City Cannot be empty');
+    expect(() => AddressVO.create('123 Main St', undefined, 'USA')).toThrow('City cannot be empty');
   });
 
   it('should throw if country is empty', () => {
