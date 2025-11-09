@@ -15,7 +15,6 @@ export interface UserCreatedPayload {
     postalCode?: string;
     country: string;
     isActive: boolean;
-    isDeleted: boolean;
 }
 
 export class UserCreatedEvent extends BaseDomainEvent<UserCreatedPayload> {
@@ -63,9 +62,5 @@ export class UserCreatedEvent extends BaseDomainEvent<UserCreatedPayload> {
 
     get isActive(): boolean {
         return this.payload.isActive;
-    }
-
-    get isDeleted(): boolean {
-        return this.payload.isDeleted;
     }
 }
