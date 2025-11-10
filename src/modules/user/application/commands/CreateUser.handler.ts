@@ -6,8 +6,12 @@ import { User } from '../../domain/User.entity';
 import { CreateUserCommand } from './CreateUser.command';
 import { UserMapper } from '../../mappers/User.mapper';
 import { CreateuserDTO } from '../../dto/CreateUser.dto';
+import { UserRepository } from '../../repository/User.repository'
+
 
 export class CreateUserHandler {
+    constructor(private readonly userRepo: UserRepository) {}
+
     async execute(command: CreateUserCommand): Promise<User> {
         const dto = CreateuserDTO.fromValidatedData({
             firstName: command.firstName ?? undefined,
@@ -23,6 +27,8 @@ export class CreateUserHandler {
         });
 
         const props = UserMapper.toDomainprops(dto);
-        return User.create(props)
+        const created = await this.userRepo.create(props);
+        created.markCreated();
+        return created;
     }
 }
