@@ -13,6 +13,7 @@ export class CreateuserDTO {
         public readonly street: string,
         public readonly city: string,
         public readonly state: string | undefined,
+        public readonly postalCode: string | undefined,
         public readonly country: string
     ) {}
 
@@ -26,6 +27,7 @@ export class CreateuserDTO {
             data.street,
             data.city,
             data.state,
+            data.postalCode,
             data.country
         )
     }

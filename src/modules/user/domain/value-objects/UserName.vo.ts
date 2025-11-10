@@ -42,7 +42,7 @@ export class UserNameVO extends ValueObject<UserNameProps> {
     return this.props.middleName
   }
 
-  get lastName(): string | undefined {
+  get lastName(): string {
     return this.props.lastName
   }
 
