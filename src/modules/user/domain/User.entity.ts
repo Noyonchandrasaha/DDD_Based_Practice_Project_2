@@ -63,7 +63,7 @@ export class User extends AggregateRoot {
     static create(props: UserProps): User {
         const user = new User(props);
         (user as any).createdAt = new Date();
-
+        (user as any).deletedAt = null;
         return user;
     }
 

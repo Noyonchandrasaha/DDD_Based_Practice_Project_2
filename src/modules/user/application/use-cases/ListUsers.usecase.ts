@@ -8,7 +8,7 @@ import { QueryParams } from '@core/types/QueryParams.type';
 import { PaginatedResult } from '@core/types/Pagination.type';
 
 export class ListUsersUseCase {
-    constructor (private readonly userRepo: UserRepository) {}
+    constructor(private readonly userRepo: UserRepository) {}
 
     async execute(
         params?: QueryParams<Partial<User>>
@@ -20,19 +20,23 @@ export class ListUsersUseCase {
     private normalize(
         p?: QueryParams<Partial<User>>
     ): QueryParams<Partial<User>> {
-        const page = Math.max(1, Number(p?.page??1));
-
+        const page = Math.max(1, Number(p?.page ?? 1)); // Ensure page is at least 1
         const rawLimit = Number(p?.limit ?? 10);
-        const limit = Math.min(Math.max(1, rawLimit), 100);
+        const limit = Math.min(Math.max(1, rawLimit), 100); // Limit between 1 and 100
 
-        const sortBy = p?.sortBy ?? 'createdAt';
-        const sortOrder = p?.sortOrder === 'desc' ? 'desc' :'asc';
+        const sortBy = p?.sortBy ?? 'createdAt'; // Default sort by createdAt
+        const sortOrder = p?.sortOrder === 'desc' ? 'desc' : 'asc'; // Default to 'asc'
 
-        const searchTrimmed = (p?.search ?? '').trim();
+        const search = (p?.search ?? '').trim();
+        const filters = p?.filters && Object.keys(p.filters).length ? p.filters : undefined; // Only pass filters if valid
 
-        const search = searchTrimmed.length ? searchTrimmed : undefined;
-
-        const filters = p?.filters && Object.keys(p.filters).length ? p.filters : undefined;
-        return {page, limit, sortBy, sortOrder, search, filters}
-    } 
+        return {
+            page,
+            limit,
+            sortBy,
+            sortOrder,
+            search: search.length ? search : undefined, // Avoid empty search string
+            filters
+        };
+    }
 }

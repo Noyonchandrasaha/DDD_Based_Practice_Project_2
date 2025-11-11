@@ -101,6 +101,7 @@ export class UserRepository extends BaseRepository<User> {
       };
     }
     if (data.isActive !== undefined) createData.isActive = data.isActive;
+    createData.deletedAt = null;
     return createData;
   }
 

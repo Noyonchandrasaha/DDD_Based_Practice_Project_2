@@ -13,7 +13,6 @@ import { UserResponseDTO } from '../dto/UserResponse.dto';
 import { PaginatedUserResponseDTO } from '../dto/PaginatedUserResponse.dto';
 import { PaginatedResult } from '@core/types/Pagination.type';
 
-
 export class UserMapper {
     private static toUndef(v: string | null | undefined): string | undefined {
         const s = typeof v === 'string' ? v.trim() : v;
@@ -40,7 +39,7 @@ export class UserMapper {
             isActive: true,
         }
     }
-    
+
     // DTO → Partial domain props (for update)
     public static toUpdateProps(dto: UpdateUserDTO, current: User): Partial<UserProps> {
         const props: Partial<UserProps> = {};
@@ -52,9 +51,9 @@ export class UserMapper {
             dto.lastName !== undefined;
 
         if (hasAnyName) {
-            const lastName   = this.toUndef(dto.lastName)   ?? current.name.lastName;
-            const firstName  = this.toUndef(dto.firstName)  ?? current.name.firstName;
-            const middleName = this.toUndef(dto.middleName) ?? current.name.middleName;
+            const lastName   = this.toUndef(dto.lastName)   ?? current.name.value.lastName;
+            const firstName  = this.toUndef(dto.firstName)  ?? current.name.value.firstName;
+            const middleName = this.toUndef(dto.middleName) ?? current.name.value.middleName;
             if (!lastName) throw new Error('lastName is required'); // invariant
             props.name = UserNameVO.create(lastName, firstName, middleName);
         }
@@ -82,11 +81,11 @@ export class UserMapper {
             dto.country !== undefined;
 
         if (hasAnyAddress) {
-            const street     = this.toUndef(dto.street)     ?? current.address.street;
-            const city       = this.toUndef(dto.city)       ?? current.address.city;
-            const country    = this.toUndef(dto.country)    ?? current.address.country;
-            const state      = this.toUndef(dto.state)      ?? current.address.state;
-            const postalCode = this.toUndef(dto.postalCode) ?? current.address.postalCode;
+            const street     = this.toUndef(dto.street)     ?? current.address.value.street;
+            const city       = this.toUndef(dto.city)       ?? current.address.value.city;
+            const country    = this.toUndef(dto.country)    ?? current.address.value.country;
+            const state      = this.toUndef(dto.state)      ?? current.address.value.state;
+            const postalCode = this.toUndef(dto.postalCode) ?? current.address.value.postalCode;
 
             if (!street || !city || !country) {
             throw new Error('street, city, and country are required');
@@ -103,20 +102,20 @@ export class UserMapper {
     public static toResponseDTO(user: User): UserResponseDTO {
         return UserResponseDTO.create({
             id: user.id,
-            firstName: user.name.firstName ?? null,
-            middleName: user.name.middleName ?? null,
-            lastName: user.name.lastName,
-            email: user.email.email,
-            phoneNumber: user.phoneNumber.phoneNumber,
-            street: user.address.street,
-            city: user.address.city,
-            state: user.address.state?? null,
-            postalCode: user.address.postalCode ?? null,
-            country: user.address.country,
+            firstName: user.name.value.firstName ?? null, // Accessing via the getter `value`
+            middleName: user.name.value.middleName ?? null, // Accessing via the getter `value`
+            lastName: user.name.value.lastName, // Accessing via the getter `value`
+            email: user.email.value.email, // Accessing via the getter `value`
+            phoneNumber: user.phoneNumber.value.phoneNumber, // Accessing via the getter `value`
+            street: user.address.value.street, // Accessing via the getter `value`
+            city: user.address.value.city, // Accessing via the getter `value`
+            state: user.address.value.state ?? null, // Accessing via the getter `value`
+            postalCode: user.address.value.postalCode ?? null, // Accessing via the getter `value`
+            country: user.address.value.country, // Accessing via the getter `value`
             isActive: user.isActive,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
-            deletedAt: (user as any).deletedAt ?? null
+            deletedAt: user.deletedAt ?? null
         })
     }
 
@@ -124,7 +123,9 @@ export class UserMapper {
         result: PaginatedResult<User>
     ): PaginatedUserResponseDTO{
         return {
-            data: result.data.map(UserMapper.toResponseDTO),
+            data: result.data.map((user) => {
+                return UserMapper.toResponseDTO(user)
+            }),
             meta: {
                 totalItems: result.meta.totalItems,
                 totalPages: result.meta.totalPages,

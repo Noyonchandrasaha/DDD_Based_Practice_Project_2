@@ -27,7 +27,7 @@ export function createUserRouter(
 
   // Create a new user
   router.post(
-    '/',
+    '/create',
     createUserValidator.execute(),
     userModule.controller.create.bind(userModule.controller)
   );

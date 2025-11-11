@@ -13,19 +13,9 @@ import { CreateuserDTO } from '../dto/CreateUser.dto';
 
 import { QueryParams } from '@core/types/QueryParams.type';
 import { User } from '../domain/User.entity';
+import { ResponseHandler } from '@common/utils/ResponseHandler.util';
+import { HttpStatus } from '@core/enums/HttpStatus.enum';
 
-// ---- simple error mapper for HTTP status codes ----
-function mapErrorToHttp(err: unknown): { status: number; body: any } {
-  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
-
-  if (msg.includes('not found'))                 return { status: 404, body: { message: 'User not found' } };
-  if (msg.includes('soft-deleted'))              return { status: 409, body: { message: 'User is soft-deleted' } };
-  if (msg.includes('not soft-deleted'))          return { status: 409, body: { message: 'User is not soft-deleted' } };
-  if (msg.includes('already soft-deleted'))      return { status: 409, body: { message: 'User is already soft-deleted' } };
-  if (msg.includes('email') && msg.includes('unique')) return { status: 409, body: { message: 'Email already in use' } };
-
-  return { status: 400, body: { message: err instanceof Error ? err.message : 'Bad Request' } };
-}
 
 export class UserController {
   constructor(private readonly service: UserService) {}
@@ -35,10 +25,17 @@ export class UserController {
     try {
       const params = this.parseQueryParams(req);
       const result = await this.service.list(params);
-      res.status(200).json(result);
+
+      // If result contains pagination (data + meta), handle appropriately
+      if (result?.data) {
+        const paginatedResponse = UserMapper.toPaginatedResponseDTO(result);
+        ResponseHandler.success(res, paginatedResponse, "Fetch users successfully", HttpStatus.OK);
+      } else {
+        // If result doesn't contain pagination, just pass the raw data
+        ResponseHandler.success(res, result, "Fetch users successfully", HttpStatus.OK);
+      }
     } catch (err) {
-      const { status, body } = mapErrorToHttp(err);
-      res.status(status).json(body);
+      ResponseHandler.error(res, err);
     }
   };
 
@@ -48,10 +45,9 @@ export class UserController {
       const includeDeleted = req.query.includeDeleted === 'true';
       const entity = await this.service.getById(req.params.id, includeDeleted);
       const dto = UserMapper.toResponseDTO(entity);
-      res.status(200).json(dto);
+      ResponseHandler.success(res, dto, "Fetch user sucessfully.", HttpStatus.OK);
     } catch (err) {
-      const { status, body } = mapErrorToHttp(err);
-      res.status(status).json(body);
+      ResponseHandler.error(res, err)
     }
   };
 
@@ -76,10 +72,9 @@ export class UserController {
 
       const entity = await this.service.create(dto);
       const resp = UserMapper.toResponseDTO(entity);
-      res.status(201).json(resp);
+      ResponseHandler.success(res, resp, "User created Successfully.", HttpStatus.CREATED)
     } catch (err) {
-      const { status, body } = mapErrorToHttp(err);
-      res.status(status).json(body);
+      ResponseHandler.error(res, err)
     }
   };
 
@@ -89,10 +84,9 @@ export class UserController {
       const validated = UpdateUserSchema.parse(req.body);
       const entity = await this.service.update(req.params.id, validated);
       const dto = UserMapper.toResponseDTO(entity);
-      res.status(200).json(dto);
+      ResponseHandler.success(res, dto, "User updated sucessfully", HttpStatus.OK)
     } catch (err) {
-      const { status, body } = mapErrorToHttp(err);
-      res.status(status).json(body);
+      ResponseHandler.error(res, err)
     }
   };
 
@@ -100,10 +94,9 @@ export class UserController {
   softDelete = async (req: Request, res: Response) => {
     try {
       await this.service.softDelete(req.params.id, 'admin'); // actor optional
-      res.status(204).send();
+      ResponseHandler.success(res,null, "User deleted sucessfully", HttpStatus.NO_CONTENT )
     } catch (err) {
-      const { status, body } = mapErrorToHttp(err);
-      res.status(status).json(body);
+      ResponseHandler.error(res,err)
     }
   };
 
@@ -112,10 +105,9 @@ export class UserController {
     try {
       const entity = await this.service.restore(req.params.id);
       const dto = UserMapper.toResponseDTO(entity);
-      res.status(200).json(dto);
+      ResponseHandler.success(res, dto, "User scussfully restored.", HttpStatus.OK);
     } catch (err) {
-      const { status, body } = mapErrorToHttp(err);
-      res.status(status).json(body);
+      ResponseHandler.error(res, err)
     }
   };
 
@@ -124,10 +116,9 @@ export class UserController {
     try {
       const entity = await this.service.activate(req.params.id);
       const dto = UserMapper.toResponseDTO(entity);
-      res.status(200).json(dto);
+      ResponseHandler.success(res, dto, "User scussfully activated.", HttpStatus.OK)
     } catch (err) {
-      const { status, body } = mapErrorToHttp(err);
-      res.status(status).json(body);
+     ResponseHandler.error(res, err)
     }
   };
 
@@ -136,10 +127,9 @@ export class UserController {
     try {
       const entity = await this.service.deactivate(req.params.id);
       const dto = UserMapper.toResponseDTO(entity);
-      res.status(200).json(dto);
+      ResponseHandler.success(res, dto, "User scussfully deactivated.", HttpStatus.OK);
     } catch (err) {
-      const { status, body } = mapErrorToHttp(err);
-      res.status(status).json(body);
+      ResponseHandler.error(res, err)
     }
   };
 
